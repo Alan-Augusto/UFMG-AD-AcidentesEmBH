@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<!-- saved from url=(0032)https://ai-boson.github.io/mcts/ -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<body>
+  <header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="https://ai-boson.github.io/mcts/">Monte Carlo Tree Search (MCTS) algorithm tutorial and it's explanation with Python code.</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger">
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"></path>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="https://ai-boson.github.io/mcts/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <div class="home"><p>In this tutorial we will be explaining the Monte Carlo Tree Search algorithm and each part of the code. Recently we applied MCTS to develop our game.</p>
+
+<p>The code is general and only assumes familarity with basic Python. We have explained it with respect to our game. If you want to use it for your project or game, you will have to slightly modify the functions which I have mentioned below.</p>
+
+<p><img src="./Monte Carlo Tree Search (MCTS) algorithm tutorial and it’s explanation with Python code. _ Apply Monte Carlo Tree Search (MCTS) algorithm and create an unbeatable A.I for a simple game. MCTS algorithm tutorial with Python code for students with no _files/400by400.png" alt="drawing" width="250"></p>
+
+<p>Here is the playstore link to the game: <a href="https://play.google.com/store/apps/details?id=com.myComp.sudo">Fractio</a>.</p>
+
+<p><a href="https://play.google.com/store/apps/details?id=com.myComp.sudo"><img src="./Monte Carlo Tree Search (MCTS) algorithm tutorial and it’s explanation with Python code. _ Apply Monte Carlo Tree Search (MCTS) algorithm and create an unbeatable A.I for a simple game. MCTS algorithm tutorial with Python code for students with no _files/google-play-badge.png" alt="homepage"></a></p>
+
+<p>Rules for our game(mode 1) are as follows:</p>
+
+<ol>
+  <li>The game is played on a 9 by 9 grid like Sudoku.</li>
+  <li>This big 9 by 9 grid is divided into 9 smaller 3 by 3 grids (local board).</li>
+  <li>Aim of the game is to win any one local board of the 9 available.</li>
+  <li>Your move determines in which local board A.I has to make a move and viceversa.</li>
+  <li>For example you make a move in position 1 of local board number 5.
+ This will force the A.I to make a move in local board number 1.</li>
+  <li>Rules of normal Tic Tac Toe are applied to local board.</li>
+</ol>
+
+<h2 id="why-mcts">Why MCTS?</h2>
+
+<p>As you would have seen this game has a very high branching factor. For the first move the entire board is empty. So there are 81 empty spots. For the first turn it has 81 possible moves. For the second turn by applying rule 4 it has 8 or 9 possible moves.</p>
+
+<p>For the first 2 moves this results in 81*9 = 729 possible combinations. Thus the number of possible combinations increases as the game progresses, resulting in a high branching factor. For both the modes of our game the branching factor is very high. For games with such high branching factor it’s not possible to apply the minimax algorithm. MCTS algorithm works for these kind of games.</p>
+
+<p>Also as you would have seen from playing the game the time it takes for the ai to make a move is just about a second. Thus MCTS runs fast. MCTS has been applied to both the modes of the game.</p>
+
+<p>MCTS consists of 4 steps:</p>
+
+<p>Note: You might not understand initially but look at the MCTS code below for proper explanation.</p>
+
+<h2 id="selection">SELECTION</h2>
+
+<p>The idea is to keep selecting best child nodes until we reach the leaf node of the tree. A good way to select such a child node is to use UCT (Upper Confidence Bound applied to trees) formula:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>	wi/ni + c*sqrt(t)/ni
+</code></pre></div></div>
+
+<p>wi = number of wins after the i-th move<br>
+ni = number of simulations after the i-th move<br>
+c = exploration parameter (theoretically equal to √2)<br>
+t = total number of simulations for the parent node</p>
+
+<h2 id="expansion">EXPANSION:</h2>
+
+<p>When it can no longer apply UCT to find the successor node, it expands the game tree by appending all possible states from the leaf node.</p>
+
+<h2 id="simulation">SIMULATION:</h2>
+
+<p>After Expansion, the algorithm picks a child node arbitrarily, and it simulates entire game from selected node until it reaches the resulting state of the game. If nodes are picked randomly during the play out, it is called light play out. You can also opt for heavy play out by writing quality heuristics or evaluation functions.</p>
+
+<h2 id="backpropagation">BACKPROPAGATION:</h2>
+
+<p>Once the algorithm reaches the end of the game, it evaluates the state to figure out which player has won. It traverses upwards to the root and increments visit score for all visited nodes. It also updates win score for each node if the player for that position has won the playout.</p>
+
+<p>Below we demonstrate the MCTS code in Python.
+First we need to import numpy and defaultdict.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+</code></pre></div></div>
+<p>Define MCTS class as shown below.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">MonteCarloTreeSearchNode</span><span class="p">():</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">parent_action</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">state</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">parent</span> <span class="o">=</span> <span class="n">parent</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">parent_action</span> <span class="o">=</span> <span class="n">parent_action</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">children</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">_number_of_visits</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">_results</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">_results</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">_results</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">_untried_actions</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">_untried_actions</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">untried_actions</span><span class="p">()</span>
+        <span class="k">return</span>
+
+</code></pre></div></div>
+<h3 id="constructor-is-used-to-initialize-the-following-variables">Constructor is used to initialize the following variables.</h3>
+<ul>
+  <li><strong>state</strong>: For our game it represents the board state. Generally the board state is represented by an array. For normal Tic Tac Toe, it is a 3 by 3 array.</li>
+  <li><strong>parent</strong>: It is None for the root node and for other nodes it is equal to the node it is derived from. For the first turn as you have seen from the game  it is None.</li>
+  <li><strong>children</strong>: It contains all possible actions from the current node. For the second turn in our game this is 9 or 8 depending on where you make your move.</li>
+  <li><strong>parent_action</strong>: None for the root node and for other nodes it is equal to the action which it’s parent carried out.</li>
+  <li><strong>_number_of_visits</strong>: Number of times current node is visited</li>
+  <li><strong>results</strong>: It’s a dictionary</li>
+  <li><strong>_untried_actions</strong>: Represents the list of all possible actions</li>
+  <li><strong>action</strong>: Move which has to be carried out.</li>
+</ul>
+
+<p>Class consists of the following member functions. All the functions below are member function except the main() function.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">untried_actions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+    <span class="bp">self</span><span class="p">.</span><span class="n">_untried_actions</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">state</span><span class="p">.</span><span class="n">get_legal_actions</span><span class="p">()</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="p">.</span><span class="n">_untried_actions</span>
+</code></pre></div></div>
+<p>Returns the list of untried actions from a given state. For the first turn of our game there are 81 possible actions. For the second turn it is 8 or 9. This varies in our game.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">q</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">wins</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">_results</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">loses</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">_results</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">wins</span> <span class="o">-</span> <span class="n">loses</span>
+</code></pre></div></div>
+<p>Returns the difference of wins - losses</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">n</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="p">.</span><span class="n">_number_of_visits</span>
+</code></pre></div></div>
+<p>Returns the number of times each node is visited.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">expand</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+	
+    <span class="n">action</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">_untried_actions</span><span class="p">.</span><span class="n">pop</span><span class="p">()</span>
+    <span class="n">next_state</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">state</span><span class="p">.</span><span class="n">move</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+    <span class="n">child_node</span> <span class="o">=</span> <span class="n">MonteCarloTreeSearchNode</span><span class="p">(</span>
+		<span class="n">next_state</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent_action</span><span class="o">=</span><span class="n">action</span><span class="p">)</span>
+
+    <span class="bp">self</span><span class="p">.</span><span class="n">children</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="n">child_node</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">child_node</span> 
+</code></pre></div></div>
+<p>From the present state, next state is generated depending on the action which is carried out. In this step all the possible child nodes corresponding to generated states are appended to the children array and the child_node is returned. The states which are possible from the present state are all generated and the child_node corresponding to this generated state is returned.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">is_terminal_node</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="p">.</span><span class="n">state</span><span class="p">.</span><span class="n">is_game_over</span><span class="p">()</span>
+</code></pre></div></div>
+<p>This is used to check if the current node is terminal or not. Terminal node is reached when the game is over.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">rollout</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">current_rollout_state</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">state</span>
+    
+    <span class="k">while</span> <span class="ow">not</span> <span class="n">current_rollout_state</span><span class="p">.</span><span class="n">is_game_over</span><span class="p">():</span>
+        
+        <span class="n">possible_moves</span> <span class="o">=</span> <span class="n">current_rollout_state</span><span class="p">.</span><span class="n">get_legal_actions</span><span class="p">()</span>
+        
+        <span class="n">action</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">rollout_policy</span><span class="p">(</span><span class="n">possible_moves</span><span class="p">)</span>
+        <span class="n">current_rollout_state</span> <span class="o">=</span> <span class="n">current_rollout_state</span><span class="p">.</span><span class="n">move</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">current_rollout_state</span><span class="p">.</span><span class="n">game_result</span><span class="p">()</span>
+</code></pre></div></div>
+<p>From the current state, entire game is simulated till there is an outcome for the game. This outcome of the game is returned. For example if it results in a win, the outcome is 1. Otherwise it is -1 if it results in a loss. And it is 0 if it is a tie. If the entire game is randomly simulated, that is at each turn the move is randomly selected out of set of possible moves, it is called light playout.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">backpropagate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
+    <span class="bp">self</span><span class="p">.</span><span class="n">_number_of_visits</span> <span class="o">+=</span> <span class="mf">1.</span>
+    <span class="bp">self</span><span class="p">.</span><span class="n">_results</span><span class="p">[</span><span class="n">result</span><span class="p">]</span> <span class="o">+=</span> <span class="mf">1.</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="p">.</span><span class="n">parent</span><span class="p">:</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">parent</span><span class="p">.</span><span class="n">backpropagate</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+</code></pre></div></div>
+<p>In this step all the statistics for the nodes are updated. Untill the parent node is reached, the number of visits for each node is incremented by 1. If the result is 1, that is it resulted in a win, then the win is incremented by 1. Otherwise if result is a loss, then loss is incremented by 1.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">is_fully_expanded</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">_untried_actions</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
+
+</code></pre></div></div>
+<p>All the actions are poped out of _untried_actions one by one. When it becomes empty, that is when the size is zero, it is fully expanded.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">best_child</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c_param</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+    
+    <span class="n">choices_weights</span> <span class="o">=</span> <span class="p">[(</span><span class="n">c</span><span class="p">.</span><span class="n">q</span><span class="p">()</span> <span class="o">/</span> <span class="n">c</span><span class="p">.</span><span class="n">n</span><span class="p">())</span> <span class="o">+</span> <span class="n">c_param</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="n">sqrt</span><span class="p">((</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">n</span><span class="p">())</span> <span class="o">/</span> <span class="n">c</span><span class="p">.</span><span class="n">n</span><span class="p">()))</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">.</span><span class="n">children</span><span class="p">]</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="p">.</span><span class="n">children</span><span class="p">[</span><span class="n">np</span><span class="p">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">choices_weights</span><span class="p">)]</span>
+
+</code></pre></div></div>
+<p>Once fully expanded, this function selects the best child out of the children array. The first term in the formula corresponds to exploitation and the second term corresponds to exploration.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">rollout_policy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">possible_moves</span><span class="p">):</span>
+    
+    <span class="k">return</span> <span class="n">possible_moves</span><span class="p">[</span><span class="n">np</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="n">randint</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">possible_moves</span><span class="p">))]</span>
+
+</code></pre></div></div>
+<p>Randomly selects a move out of possible moves. This is an example of random playout.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">_tree_policy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+    <span class="n">current_node</span> <span class="o">=</span> <span class="bp">self</span>
+    <span class="k">while</span> <span class="ow">not</span> <span class="n">current_node</span><span class="p">.</span><span class="n">is_terminal_node</span><span class="p">():</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">current_node</span><span class="p">.</span><span class="n">is_fully_expanded</span><span class="p">():</span>
+            <span class="k">return</span> <span class="n">current_node</span><span class="p">.</span><span class="n">expand</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">current_node</span> <span class="o">=</span> <span class="n">current_node</span><span class="p">.</span><span class="n">best_child</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">current_node</span>
+</code></pre></div></div>
+<p>Selects node to run rollout.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">best_action</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">simulation_no</span> <span class="o">=</span> <span class="mi">100</span>
+	
+	
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">simulation_no</span><span class="p">):</span>
+		
+        <span class="n">v</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">_tree_policy</span><span class="p">()</span>
+        <span class="n">reward</span> <span class="o">=</span> <span class="n">v</span><span class="p">.</span><span class="n">rollout</span><span class="p">()</span>
+        <span class="n">v</span><span class="p">.</span><span class="n">backpropagate</span><span class="p">(</span><span class="n">reward</span><span class="p">)</span>
+	
+    <span class="k">return</span> <span class="bp">self</span><span class="p">.</span><span class="n">best_child</span><span class="p">(</span><span class="n">c_param</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span>
+</code></pre></div></div>
+<p>This is the best action function which returns the node corresponding to best possible move.
+The step of expansion, simulation and backpropagation are carried out by the code above.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">get_legal_actions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> 
+    <span class="s">'''
+    Modify according to your game or
+    needs. Constructs a list of all
+    possible actions from current state.
+    Returns a list.
+    '''</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">is_game_over</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="s">'''
+    Modify according to your game or 
+    needs. It is the game over condition
+    and depends on your game. Returns
+    true or false
+    '''</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">game_result</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="s">'''
+    Modify according to your game or 
+    needs. Returns 1 or 0 or -1 depending
+    on your state corresponding to win,
+    tie or a loss.
+    '''</span>
+</code></pre></div></div>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">move</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">action</span><span class="p">):</span>
+    <span class="s">'''
+    Modify according to your game or 
+    needs. Changes the state of your 
+    board with a new value. For a normal
+    Tic Tac Toe game, it can be a 3 by 3
+    array with all the elements of array
+    being 0 initially. 0 means the board 
+    position is empty. If you place x in
+    row 2 column 3, then it would be some 
+    thing like board[2][3] = 1, where 1
+    represents that x is placed. Returns 
+    the new state after making a move.
+    '''</span>
+
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="n">root</span> <span class="o">=</span> <span class="n">MonteCarloTreeSearchNode</span><span class="p">(</span><span class="n">state</span> <span class="o">=</span> <span class="n">initial_state</span><span class="p">)</span>
+    <span class="n">selected_node</span> <span class="o">=</span> <span class="n">root</span><span class="p">.</span><span class="n">best_action</span><span class="p">()</span>
+    <span class="k">return</span> 
+</code></pre></div></div>
+<p>This is the main() function. Initialize the root node and call the best_action function to get the best node. This is not a member function of the class. All the other functions are member function of the class.</p>
+
+<p>If you like the tutorial please consider checking out game page of my first 3D game <a href="https://store.steampowered.com/app/2178650/Fastraq/">Fastraq</a></p>
+
+<h2 id="designing-your-game">DESIGNING YOUR GAME:</h2>
+
+<p>If you plan to make your own game, you will have to think about the following questions.</p>
+<ol>
+  <li><strong>How will you represent the state of your game? Think about the initial state in our game.</strong></li>
+  <li><strong>What will be the end game condition for your game? Compare it with the end game condition of our game.</strong></li>
+  <li><strong>How will you get the legal actions in your game? Try getting the legal actions for the first move of our game.</strong></li>
+</ol>
+
+<iframe src="./Monte Carlo Tree Search (MCTS) algorithm tutorial and it’s explanation with Python code. _ Apply Monte Carlo Tree Search (MCTS) algorithm and create an unbeatable A.I for a simple game. MCTS algorithm tutorial with Python code for students with no _files/saved_resource.html" frameborder="0" width="646" height="190"></iframe>
+
+<p>If you have any questions or suggestions, feel free to contact me at bosonicstudios@gmail.com</p>
+
+</div>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/mcts/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Monte Carlo Tree Search (MCTS) algorithm tutorial and it's explanation with Python code.</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Monte Carlo Tree Search (MCTS) algorithm tutorial and it's explanation with Python code.</li><li><a class="u-email" href="mailto:bosonicstudios@gmail.com">bosonicstudios@gmail.com</a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/ai-boson"><svg class="svg-icon"><use xlink:href="/mcts/assets/minima-social-icons.svg#github"></use></svg> <span class="username">ai-boson</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Apply Monte Carlo Tree Search (MCTS) algorithm and create an unbeatable A.I for a simple game. MCTS algorithm tutorial with Python code for students with no background in Computer Science or Machine Learning. Design board games like Go, Sudo Tic Tac Toe, Chess, etc within hours.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+
+</body></html>

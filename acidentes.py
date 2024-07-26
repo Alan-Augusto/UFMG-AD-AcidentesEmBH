@@ -8,9 +8,9 @@ def getAcidentes():
     return pd.read_csv('./data/acidentes.csv', delimiter=',', encoding='ISO-8859-1', low_memory=False)
 
 
-def getAcidentesPorRegiaoTotal():
+def getTotalAcidentes():
     # Carregar os dados
-    dataSetAcidentes = getAcidentes()
+    dataSetAcidentes = getAcidentesLimpos()
 
     # Filtrar acidentes com regiões válidas (não nulas e não vazias)
     dataSetAcidentes = dataSetAcidentes[dataSetAcidentes['DESC_REGIONAL'].notna() & (dataSetAcidentes['DESC_REGIONAL'].str.strip() != '')]
@@ -30,10 +30,17 @@ def getAcidentesPorRegiaoTotal():
     plt.title('Quantidade de Acidentes por Região')
     plt.show()
 
+    #Grafico Pizza:
+    plt.figure(figsize=(12, 8))
+    acidentes_por_regiao.plot(kind='pie', autopct='%1.1f%%')
+    plt.title('Distribuição de Acidentes por Região')
+    plt.ylabel('')
+    plt.show()
+
 
 def getAcidentesPorRegiaoAno():
     # Carregar os dados
-    dataSetAcidentes = getAcidentes()
+    dataSetAcidentes = getAcidentesLimpos()
 
     # Filtrar acidentes com regiões válidas (não nulas e não vazias)
     dataSetAcidentes = dataSetAcidentes[dataSetAcidentes['DESC_REGIONAL'].notna() & (dataSetAcidentes['DESC_REGIONAL'].str.strip() != '')]
@@ -57,9 +64,30 @@ def getAcidentesPorRegiaoAno():
     plt.grid(True)
     plt.show()
 
+def getAcidentesLimpos():
+    # Carregar os dados
+    dataSetAcidentes = getAcidentes()
+
+    # Filtrar acidentes com regiões válidas (não nulas e não vazias)
+    dataSetAcidentes = dataSetAcidentes[dataSetAcidentes['DESC_REGIONAL'].notna() & (dataSetAcidentes['DESC_REGIONAL'].str.strip() != '')]
+
+    # Extrair a data e a região
+    dataSetAcidentes['DATA_BOLETIM'] = pd.to_datetime(dataSetAcidentes['DATA HORA_BOLETIM'], format='%d/%m/%Y %H:%M', errors='coerce')
+    dataSetAcidentes['ANO'] = dataSetAcidentes['DATA_BOLETIM'].dt.year
+    #Mes
+    dataSetAcidentes['MES'] = dataSetAcidentes['DATA_BOLETIM'].dt.month
+    #Dia
+    dataSetAcidentes['DIA'] = dataSetAcidentes['DATA_BOLETIM'].dt.day
+    #Dia da semana
+    dataSetAcidentes['DIA_SEMANA'] = dataSetAcidentes['DATA_BOLETIM'].dt.day_name()
+
+    dataSetAcidentes = dataSetAcidentes[(dataSetAcidentes['ANO'] >= 2012) & (dataSetAcidentes['ANO'] <= 2022)]
+
+    return dataSetAcidentes
 
 
 def main():
+    getTotalAcidentes();
     getAcidentesPorRegiaoAno();
     
 
