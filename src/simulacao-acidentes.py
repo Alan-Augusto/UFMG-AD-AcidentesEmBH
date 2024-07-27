@@ -2,17 +2,17 @@ import pandas as pd
 from random import choice
 from mcts import MCTS, Node
 import hashlib
+import sys
 
 class AccidentNode(Node):
     def __init__(self, data, conditions=None):
         self.data = data
         self.conditions = conditions if conditions else []
         self.children = None
-        self.terminal = False  # Pode ser ajustado para definir estados terminais
         self._hash = None  # Cache do hash
 
     def find_children(self):
-        if self.terminal:
+        if self.is_terminal():
             return set()
         if self.children is None:
             self.children = set()
@@ -36,10 +36,11 @@ class AccidentNode(Node):
         return choice(children)
 
     def is_terminal(self):
-        return self.terminal
+        # Um nó é terminal se não houver dados após a aplicação das condições
+        return self.data.empty
 
     def reward(self):
-        if not self.terminal:
+        if not self.is_terminal():
             raise RuntimeError("reward called on nonterminal node")
         return self.calculate_reward(self.data)
 
@@ -75,10 +76,15 @@ print("Iniciando simulação de acidentes...")
 # Inicializar e executar o MCTS
 tree = MCTS()
 
-for i in range(100):  # Ajuste o número de iterações conforme necessário
-    if i % 10 == 0:
-        print(f"{i}% concluído")
+numero_simulacoes = int(input("Digite o número de simulações: "))
+
+for i in range(numero_simulacoes):  # Ajuste o número de iterações conforme necessário
     tree.do_rollout(root)
+    progress = (i + 1) / numero_simulacoes * 100
+    sys.stdout.write(f"\rProgresso: {progress:.2f}%")
+    sys.stdout.flush()
+
+print("\n")
 
 # Escolher o melhor subgrupo
 best_node = tree.choose(root)
