@@ -4,12 +4,21 @@ from mcts import MCTS, Node
 import hashlib
 import sys
 
+def limpar_dados(data):
+    print("limpando dados...")
+    # LIMPAR NOMES DAS COLUNAS, REMOVER ACENTOS E CARACTERES ESPECIAIS E REMOVER ESPAÇOS EM BRANCO
+    data.columns = data.columns.str.normalize('NFKD').str.encode('ascii', errors='ignore').str.decode('utf-8')
+
+    #Limpar os dados das linhas REMOVER ACENTOS E CARACTERES ESPECIAIS E REMOVER ESPAÇOS EM BRANCO
+    data = data.apply(lambda x: x.str.normalize('NFKD').str.encode('ascii', errors='ignore').str.decode('utf-8') if x.dtype == "object" else x)
+    #remover espaços em branco
+    data = data.apply(lambda x: x.str.strip() if x.dtype == "object" else x)
+    return data
 
 def definir_condicoes():
         conditions = []
-        #definir todas as possibilidades de condições, ou seja, para cada coluna, colocar todas as possíveis condições EX: [('TIPO_ACIDENTE', 'COLISÃO'),('TIPO_ACIDENTE', 'CAPOTAMENTO'),...] com base na tabela:
 
-        colunas_ignoradas = ['NUMERO_BOLETIM', 'DATA HORA_BOLETIM', 'DATA_INCLUSAO', 'COD_TEMPO', 'COD_PAVIMENTO', 'COD_REGIONAL', 'ORIGEM_BOLETIM', 'COORDENADA_X', 'COORDENADA_Y', 'HORA_INFORMADA','VALOR_UPS', 'DESCRICAO_UPS', 'DATA_ALTERACAO_SMSA', 'VALOR_UPS_ANTIGA', 'DESCRICAO_UPS_ANTIGA', 'DESCRIÃÃO_UPS', 'DESCRIÃÃO_UPS_ANTIGA', 'NUM_ACIDENTES', 'TIPO_ACIDENTE']
+        colunas_ignoradas = ['NUMERO_BOLETIM', 'DATA HORA_BOLETIM', 'DATA_INCLUSAO', 'TIPO_ACIDENTE', 'COD_TEMPO', 'COD_PAVIMENTO', 'COD_REGIONAL', 'ORIGEM_BOLETIM', 'COORDENADA_X', 'COORDENADA_Y', 'HORA_INFORMADA', 'VALOR_UPS', 'DESCRICAO_UPS', 'DATA_ALTERACAO_SMSA', 'VALOR_UPS_ANTIGA', 'DESCRICAO_UPS_ANTIGA', 'DESCRIAAO_UPS', 'DESCRIAAO_UPS_ANTIGA']
 
 
         for column in data.columns:
@@ -36,6 +45,7 @@ class AccidentNode(Node):
                 new_conditions = self.conditions + [condition]
                 new_data = self.apply_conditions(self.data, new_conditions)
                 self.children.add(AccidentNode(new_data, new_conditions))
+                print(f"Novo nó criado com condições: {new_conditions}, Dados restantes: {new_data.shape}")
         return self.children
 
     def find_random_child(self):
@@ -59,9 +69,11 @@ class AccidentNode(Node):
         filtered_data = data.copy(deep=False)  # Use cópia rasa para eficiência
         for column, value in conditions:
             filtered_data = filtered_data[filtered_data[column] == value]
+            print(f"Condição aplicada: {column} == {value}, Dados restantes: {filtered_data.shape}")
         return filtered_data
 
     def calculate_reward(self, data):
+        
         print("\nCalculando recompensa... -> ", -data['NUM_ACIDENTES'].sum())
         print(data)
         return -data['NUM_ACIDENTES'].sum()  # Queremos minimizar o número de acidentes, então usamos negativo
@@ -84,12 +96,17 @@ class AccidentNode(Node):
 
 ##==================MAIN====================
 
+
 # Carregar os dados de acidentes
 data = pd.read_csv('../data/acidentes.csv', delimiter=',', encoding='ISO-8859-1', low_memory=False)
-data['NUM_ACIDENTES'] = 1  # Adicionar uma coluna para contar os acidentes (para fins de exemplo)
 
+data = limpar_dados(data)
+
+# Adicionar uma coluna para contar os acidentes
+data['NUM_ACIDENTES'] = 1 
 # Pré-processamento para adicionar uma coluna de horário (por exemplo, dia/noite)
 data['HORARIO'] = data['DATA HORA_BOLETIM'].apply(lambda x: 'NOITE' if int(x.split()[1].split(':')[0]) >= 18 else 'DIA')
+
 
 # Inicializar o nó raiz
 root = AccidentNode(data)
@@ -98,6 +115,7 @@ root = AccidentNode(data)
 tree = MCTS()
 
 numero_simulacoes = int(input("Digite o número de simulações: "))
+
 
 for i in range(numero_simulacoes):  # Ajuste o número de iterações conforme necessário
     tree.do_rollout(root)
