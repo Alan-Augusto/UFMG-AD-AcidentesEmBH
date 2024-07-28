@@ -97,7 +97,7 @@ class AccidentNode(Node):
 ##==================MAIN====================
 
 
-# Carregar os dados de acidentes
+# Carregar os dados de acidentes 
 data = pd.read_csv('../data/acidentes.csv', delimiter=',', encoding='ISO-8859-1', low_memory=False)
 
 data = limpar_dados(data)
@@ -128,4 +128,4 @@ print("\n")
 # Escolher o melhor subgrupo
 best_node = tree.choose(root)
 print(f"100% concluído")
-print(f"Melhor subgrupo de acidentes: {best_node.conditions}")
+print(f"Melhor subgrupo de acidentes: {best_node.conditions}"
