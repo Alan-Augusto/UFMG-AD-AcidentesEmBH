@@ -34,23 +34,31 @@ class MCTS:
         return max(self.children[node], key=score)
 
     def do_rollout(self, node):
+        #print("\ndo_rollout...\n")
+        #print(node)
+
         "Make the tree one layer better. (Train for one iteration.)"
         path = self._select(node)
+        #print("\npath:", path)
         leaf = path[-1]
         self._expand(leaf)
         reward = self._simulate(leaf)
         self._backpropagate(path, reward)
 
     def _select(self, node):
+        #print("\nselect...\n")
+        #print(node)
         "Find an unexplored descendent of `node`"
         path = []
         while True:
             path.append(node)
             if node not in self.children or not self.children[node]:
                 # node is either unexplored or terminal
+                #print("\nnó inexplorado ou terminal\n")
                 return path
             unexplored = self.children[node] - self.children.keys()
             if unexplored:
+                #print("\ninexplorado\n")
                 n = unexplored.pop()
                 path.append(n)
                 return path

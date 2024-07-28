@@ -4,25 +4,34 @@ from mcts import MCTS, Node
 import hashlib
 import sys
 
+
+def definir_condicoes():
+        conditions = []
+        #definir todas as possibilidades de condições, ou seja, para cada coluna, colocar todas as possíveis condições EX: [('TIPO_ACIDENTE', 'COLISÃO'),('TIPO_ACIDENTE', 'CAPOTAMENTO'),...] com base na tabela:
+
+        colunas_ignoradas = ['NUMERO_BOLETIM', 'DATA HORA_BOLETIM', 'DATA_INCLUSAO', 'COD_TEMPO', 'COD_PAVIMENTO', 'COD_REGIONAL', 'ORIGEM_BOLETIM', 'COORDENADA_X', 'COORDENADA_Y', 'HORA_INFORMADA','VALOR_UPS', 'DESCRICAO_UPS', 'DATA_ALTERACAO_SMSA', 'VALOR_UPS_ANTIGA', 'DESCRICAO_UPS_ANTIGA', 'DESCRIÃÃO_UPS', 'DESCRIÃÃO_UPS_ANTIGA', 'NUM_ACIDENTES', 'TIPO_ACIDENTE']
+
+
+        for column in data.columns:
+            if column in colunas_ignoradas:
+                continue
+            for value in data[column].unique():
+                conditions.append((column, value))
+        return conditions
 class AccidentNode(Node):
     def __init__(self, data, conditions=None):
         self.data = data
         self.conditions = conditions if conditions else []
         self.children = None
         self._hash = None  # Cache do hash
+        self.conditionsDefinidas = definir_condicoes()
 
     def find_children(self):
         if self.is_terminal():
             return set()
         if self.children is None:
             self.children = set()
-            possible_conditions = [
-                ('TIPO_ACIDENTE', 'COLISÃO'),
-                ('DESC_TIPO_ACIDENTE', 'COLISÃO COM MOTOCICLETA'),
-                ('DESC_TEMPO', 'CHUVOSO'),
-                ('PAVIMENTO', 'MOLHADO'),
-                ('HORARIO', 'NOITE')
-            ]
+            possible_conditions = self.conditionsDefinidas
             for condition in possible_conditions:
                 new_conditions = self.conditions + [condition]
                 new_data = self.apply_conditions(self.data, new_conditions)
@@ -37,9 +46,11 @@ class AccidentNode(Node):
 
     def is_terminal(self):
         # Um nó é terminal se não houver dados após a aplicação das condições
+        # print("is_terminal->", self.data.empty, "\n dados: \n", self.data)
         return self.data.empty
 
     def reward(self):
+        # print("reward->", self.data.head())
         if not self.is_terminal():
             raise RuntimeError("reward called on nonterminal node")
         return self.calculate_reward(self.data)
@@ -51,6 +62,8 @@ class AccidentNode(Node):
         return filtered_data
 
     def calculate_reward(self, data):
+        print("\nCalculando recompensa... -> ", -data['NUM_ACIDENTES'].sum())
+        print(data)
         return -data['NUM_ACIDENTES'].sum()  # Queremos minimizar o número de acidentes, então usamos negativo
 
     def __hash__(self):
@@ -62,6 +75,15 @@ class AccidentNode(Node):
     def __eq__(self, other):
         return isinstance(other, AccidentNode) and self.conditions == other.conditions
 
+    def __str__(self):
+        return f"AccidentNode(conditions={self.conditions}, data_shape={self.data.shape})"
+
+    def __repr__(self):
+        return f"AccidentNode(conditions={self.conditions}, data_shape={self.data.shape})"
+
+
+##==================MAIN====================
+
 # Carregar os dados de acidentes
 data = pd.read_csv('../data/acidentes.csv', delimiter=',', encoding='ISO-8859-1', low_memory=False)
 data['NUM_ACIDENTES'] = 1  # Adicionar uma coluna para contar os acidentes (para fins de exemplo)
@@ -72,7 +94,6 @@ data['HORARIO'] = data['DATA HORA_BOLETIM'].apply(lambda x: 'NOITE' if int(x.spl
 # Inicializar o nó raiz
 root = AccidentNode(data)
 
-print("Iniciando simulação de acidentes...")
 # Inicializar e executar o MCTS
 tree = MCTS()
 
